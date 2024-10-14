@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamento de Atividades</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
+
+    <!-- Font Awesome CSS for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOMZ4ZB6bqGgtVNB2U4lD7K7f2kN6WqB6gPL5O5" crossorigin="anonymous">
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="card shadow-lg">
+        <div class="card-body">
+            <h1 class="card-title">Agendamento de Atividades</h1>
+
+            <!-- Formulário de Agendamento -->
+            <form id="activityForm" class="mb-4">
+                <div class="form-group">
+                    <label for="activityName">Nome da Atividade</label>
+                    <input type="text" id="activityName" class="form-control" placeholder="Digite a atividade">
+                </div>
+
+                <div class="form-row align-items-end">
+                    <div class="form-group col-md-4">
+                        <label for="activityDate">Data</label>
+                        <input type="date" id="activityDate" class="form-control">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="activityHour">Hora</label>
+                        <input type="number" id="activityHour" class="form-control" placeholder="Hora" min="0" max="23">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="activityMinute">Minuto</label>
+                        <input type="number" id="activityMinute" class="form-control" placeholder="Minuto" min="0" max="59">
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>&nbsp;</label>
+                        <i class="fas fa-clock fa-2x align-middle"></i>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="addActivity()">Adicionar Atividade</button>
+            </form>
+
+            <!-- Calendário -->
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar detalhes da atividade -->
+<div class="modal fade" id="activityModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel">Detalhes da Atividade</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Atividade:</strong> <span id="modalTitle"></span></p>
+        <p>
+          <strong>Data e Hora:</strong>
+          <span id="modalDate"></span>
+          <i class="fas fa-clock ml-2"></i> <!-- Ícone de relógio -->
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="deleteBtn">Excluir Atividade</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
+
+<script>
+    // Vetor para armazenar as atividades
+    const activities = [];
+
+    // Variável para o calendário
+    let calendar;
+    let selectedEvent = null; // Variável para armazenar o evento selecionado
+
+    // Função para adicionar atividade
+    function addActivity() {
+        const activityName = document.getElementById('activityName').value;
+        const activityDate = document.getElementById('activityDate').value;
+        const activityHour = document.getElementById('activityHour').value;
+        const activityMinute = document.getElementById('activityMinute').value;
+
+        if (activityName && activityDate && activityHour !== '' && activityMinute !== '') {
+            const fullDate = `${activityDate}T${activityHour.padStart(2, '0')}:${activityMinute.padStart(2, '0')}:00`;
+            const newActivity = {
+                title: activityName,
+                start: fullDate
+            };
+
+            activities.push(newActivity);
+            calendar.addEventSource([newActivity]);  // Adiciona o novo evento
+            
+            // Limpa o formulário
+            document.getElementById('activityForm').reset();
+        } else {
+            alert('Por favor, preencha todos os campos.');
+        }
+    }
+
+    // Função para excluir atividade
+    function deleteActivity() {
+        if (selectedEvent) {
+            selectedEvent.remove();  // Remove o evento do calendário
+            selectedEvent = null;
+            $('#activityModal').modal('hide');  // Fecha o modal
+        }
+    }
+
+    // Inicializar o calendário
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            events: activities, // Eventos vindos do vetor
+            eventClick: function(info) {
+                selectedEvent = info.event;  // Armazena o evento selecionado
+                
+                // Preenche o modal com informações da atividade
+                document.getElementById('modalTitle').textContent = info.event.title;
+                document.getElementById('modalDate').textContent = info.event.start.toLocaleString();
+
+                // Abre o modal
+                $('#activityModal').modal('show');
+            }
+        });
+        calendar.render();
+
+        // Adiciona o listener para o botão de exclusão
+        document.getElementById('deleteBtn').addEventListener('click', deleteActivity);
+    });
+</script>
+
+</body>
+</html>
